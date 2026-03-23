@@ -1,7 +1,8 @@
 {
-  "name": "ai-records-temp",
-  "version": "0.1.0",
+  "name": "ai-records",
+  "version": "1.0.0",
   "private": true,
+  "description": "Bulgarian Lyrics Generator for SUNO AI",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,9 +10,22 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.94.0",
+    "@tanstack/react-query": "^5.90.20",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.31.0",
+    "lucide-react": "^0.563.0",
     "next": "16.1.6",
+    "openai": "^6.17.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-hook-form": "^7.71.1",
+    "react-player": "^3.4.0",
+    "tailwind-merge": "^3.4.0",
+    "zod": "^4.3.6",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

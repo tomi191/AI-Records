@@ -32,6 +32,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.local.example
+
+# training data
+/data/training-lyrics/*.txt
 
 # vercel
 .vercel
@@ -39,3 +43,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude code
+.claude/
+
+# playwright mcp screenshots
+.playwright-mcp/
+
+# windows artifacts
+nul
+
+# raw upload files
+/For-Uploads/

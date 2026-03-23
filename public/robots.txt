@@ -1,0 +1,14 @@
+# AI-Records Robots.txt
+# https://ai-records.com
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /studio
+Disallow: /player
+Disallow: /settings
+
+# Sitemap
+Sitemap: https://ai-records.com/sitemap.xml
