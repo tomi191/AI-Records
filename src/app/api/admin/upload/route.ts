@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, supabaseAdmin } from '@/lib/auth';
+import { requireAdmin, getSupabaseAdmin } from '@/lib/auth';
 import { uploadToR2, isR2Configured } from '@/lib/r2';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     const audioUrl = await uploadToR2(buffer, file.name, file.type);
 
     // Insert into Supabase
-    const { data: track, error: dbError } = await supabaseAdmin
+    const { data: track, error: dbError } = await getSupabaseAdmin()
       .from('tracks')
       .insert({
         title: title.trim(),

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { supabaseAdmin } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/auth';
 import { Music, Users, Star, Upload } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -8,17 +8,17 @@ export default async function AdminDashboard() {
   // Fetch real data from Supabase
   const [tracksResult, profilesResult, featuredResult, recentResult] =
     await Promise.all([
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('tracks')
         .select('id', { count: 'exact', head: true }),
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('profiles')
         .select('id', { count: 'exact', head: true }),
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('tracks')
         .select('id', { count: 'exact', head: true })
         .eq('is_featured', true),
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('tracks')
         .select('*')
         .order('created_at', { ascending: false })

@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-// Public client (respects RLS)
+// Public client (respects RLS) — lazy to avoid build-time env errors
 function getPublicClient() {
-  return createClient(supabaseUrl, supabaseAnonKey);
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 }
 
 // Service role client (bypasses RLS)
 function getServiceClient() {
-  return createClient(supabaseUrl, supabaseServiceRoleKey);
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 }
 
 // GET /api/tracks — Public endpoint, no auth required

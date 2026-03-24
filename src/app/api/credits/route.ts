@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { supabaseAdmin } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/auth';
 
 // GET - Fetch user credits
 export async function GET() {
@@ -14,7 +14,7 @@ export async function GET() {
       );
     }
 
-    const { data: profile, error } = await supabaseAdmin
+    const { data: profile, error } = await getSupabaseAdmin()
       .from('profiles')
       .select('credits, subscription_tier')
       .eq('id', userId)
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Atomic check: only select if user has enough credits
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from('profiles')
       .select('credits')
       .eq('id', userId)
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Optimistic locking: only deduct if credits haven't changed since the SELECT
-    const { data: updated, error: updateError } = await supabaseAdmin
+    const { data: updated, error: updateError } = await getSupabaseAdmin()
       .from('profiles')
       .update({ credits: data.credits - amount })
       .eq('id', userId)
