@@ -1,5 +1,5 @@
 import { Navbar, Footer } from '@/components/layout';
-import { Hero, Features, DemoPlayer, Pricing, CTA } from '@/components/landing';
+import { Hero, Features, FeaturedMusic, Pricing, CTA } from '@/components/landing';
 
 export default function Home() {
   return (
@@ -8,7 +8,7 @@ export default function Home() {
       <main>
         <Hero />
         <Features />
-        <DemoPlayer />
+        <FeaturedMusic />
         <Pricing />
         <CTA />
       </main>
