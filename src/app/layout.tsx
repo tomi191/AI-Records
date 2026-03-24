@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
+import MusicPlayer from '@/components/player/MusicPlayer';
 import './globals.css';
 
 const inter = Inter({
@@ -47,8 +48,9 @@ export default function RootLayout({
   return (
     <ClerkProvider afterSignOutUrl="/">
       <html lang="bg" className="dark">
-        <body className={`${inter.variable} font-sans antialiased bg-gray-950 text-gray-200`}>
+        <body className={`${inter.variable} font-sans antialiased bg-gray-950 text-gray-200 pb-28`}>
           {children}
+          <MusicPlayer />
         </body>
       </html>
     </ClerkProvider>

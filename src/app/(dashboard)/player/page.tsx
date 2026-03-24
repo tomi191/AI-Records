@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Music2, Filter, Search } from 'lucide-react';
 import { Card, Input, Badge } from '@/components/ui';
-import { TrackList, MusicPlayer } from '@/components/player';
+import { TrackList } from '@/components/player';
 import type { Track } from '@/lib/supabase/types';
 
 // Demo tracks for initial display
@@ -11,6 +11,7 @@ const demoTracks: Track[] = [
   {
     id: 'demo-1',
     user_id: null,
+    uploaded_by: null,
     title: 'Без посока',
     artist: 'Sarys',
     style: 'Pop',
@@ -19,13 +20,17 @@ const demoTracks: Track[] = [
     cover_url: null,
     lyrics: null,
     is_public: true,
+    is_featured: false,
     play_count: 1234,
+    download_count: 0,
     duration: 204,
+    file_size: null,
     created_at: new Date().toISOString(),
   },
   {
     id: 'demo-2',
     user_id: null,
+    uploaded_by: null,
     title: 'Изгубени дни',
     artist: 'Sarys',
     style: 'Ballad',
@@ -34,13 +39,17 @@ const demoTracks: Track[] = [
     cover_url: null,
     lyrics: null,
     is_public: true,
+    is_featured: false,
     play_count: 876,
+    download_count: 0,
     duration: 252,
+    file_size: null,
     created_at: new Date().toISOString(),
   },
   {
     id: 'demo-3',
     user_id: null,
+    uploaded_by: null,
     title: 'Без посока 2',
     artist: 'Sarys',
     style: 'Pop',
@@ -49,8 +58,11 @@ const demoTracks: Track[] = [
     cover_url: null,
     lyrics: null,
     is_public: true,
+    is_featured: false,
     play_count: 543,
+    download_count: 0,
     duration: 198,
+    file_size: null,
     created_at: new Date().toISOString(),
   },
 ];
@@ -166,8 +178,6 @@ export default function PlayerPage() {
         </Card>
       </div>
 
-      {/* Fixed Music Player */}
-      <MusicPlayer />
     </div>
   );
 }

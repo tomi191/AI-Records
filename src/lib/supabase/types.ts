@@ -87,6 +87,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string | null;
+          uploaded_by: string | null;
           title: string;
           artist: string;
           audio_url: string | null;
@@ -95,13 +96,17 @@ export interface Database {
           lyrics: string | null;
           style: string | null;
           is_public: boolean;
+          is_featured: boolean;
           play_count: number;
+          download_count: number;
           duration: number | null;
+          file_size: number | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           user_id?: string | null;
+          uploaded_by?: string | null;
           title: string;
           artist?: string;
           audio_url?: string | null;
@@ -110,13 +115,17 @@ export interface Database {
           lyrics?: string | null;
           style?: string | null;
           is_public?: boolean;
+          is_featured?: boolean;
           play_count?: number;
+          download_count?: number;
           duration?: number | null;
+          file_size?: number | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           user_id?: string | null;
+          uploaded_by?: string | null;
           title?: string;
           artist?: string;
           audio_url?: string | null;
@@ -125,8 +134,11 @@ export interface Database {
           lyrics?: string | null;
           style?: string | null;
           is_public?: boolean;
+          is_featured?: boolean;
           play_count?: number;
+          download_count?: number;
           duration?: number | null;
+          file_size?: number | null;
           created_at?: string;
         };
         Relationships: [];

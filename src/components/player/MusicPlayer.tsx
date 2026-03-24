@@ -101,14 +101,7 @@ export default function MusicPlayer() {
   };
 
   if (!currentTrack) {
-    return (
-      <div className="fixed bottom-0 left-0 right-0 h-24 bg-gray-900/95 backdrop-blur-xl border-t border-white/[0.08] flex items-center justify-center">
-        <div className="flex items-center gap-3 text-gray-500">
-          <Music2 className="w-5 h-5" />
-          <span>Select a track to play</span>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

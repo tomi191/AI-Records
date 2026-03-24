@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Play,
@@ -14,8 +14,10 @@ import {
 } from 'lucide-react';
 import { Card } from '@/components/ui';
 import { formatDuration, formatNumber } from '@/lib/utils';
+import { usePlayerStore } from '@/store/playerStore';
+import type { Track } from '@/lib/supabase/types';
 
-interface Track {
+interface FeaturedTrackAPI {
   id: string;
   title: string;
   artist: string;
@@ -27,19 +29,57 @@ interface Track {
   duration: number | null;
 }
 
+function apiTrackToTrack(t: FeaturedTrackAPI): Track {
+  return {
+    id: t.id,
+    user_id: null,
+    uploaded_by: null,
+    title: t.title,
+    artist: t.artist,
+    style: t.style,
+    audio_url: t.audio_url,
+    youtube_url: null,
+    cover_url: t.cover_url,
+    lyrics: null,
+    is_public: true,
+    is_featured: true,
+    play_count: t.play_count,
+    download_count: t.download_count,
+    duration: t.duration,
+    file_size: null,
+    created_at: new Date().toISOString(),
+  };
+}
+
 export default function FeaturedMusic() {
   const [tracks, setTracks] = useState<Track[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const [playCountIncremented, setPlayCountIncremented] = useState<Set<string>>(new Set());
 
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const progressRef = useRef<HTMLDivElement>(null);
+  const {
+    currentTrack,
+    isPlaying,
+    progress,
+    duration,
+    setCurrentTrack,
+    setQueue,
+    togglePlay,
+    play,
+    pause,
+    playNext,
+    playPrevious,
+  } = usePlayerStore();
 
-  const track = tracks[currentIndex] ?? null;
+  // Derive current index from playerStore's currentTrack
+  const currentIndex = currentTrack
+    ? tracks.findIndex((t) => t.id === currentTrack.id)
+    : 0;
+
+  // The track to display (from local list, falling back to first)
+  const track = currentIndex >= 0 ? tracks[currentIndex] : tracks[0] ?? null;
+
+  // Whether the currently playing track is one of our featured tracks
+  const isOurTrack = currentTrack ? tracks.some((t) => t.id === currentTrack.id) : false;
 
   // Fetch featured tracks on mount
   useEffect(() => {
@@ -49,7 +89,8 @@ export default function FeaturedMusic() {
         if (!res.ok) return;
         const data = await res.json();
         if (data.tracks && data.tracks.length > 0) {
-          setTracks(data.tracks);
+          const mapped: Track[] = data.tracks.map(apiTrackToTrack);
+          setTracks(mapped);
           setLoaded(true);
         }
       } catch {
@@ -83,89 +124,56 @@ export default function FeaturedMusic() {
     [playCountIncremented]
   );
 
-  // Handle play/pause
-  const togglePlay = useCallback(async () => {
-    const audio = audioRef.current;
-    if (!audio || !track) return;
+  // Handle play/pause via global store
+  const handleTogglePlay = useCallback(() => {
+    if (!track) return;
 
-    if (isPlaying) {
-      audio.pause();
-      setIsPlaying(false);
+    // If no track is loaded in store yet, or a different track is loaded, set ours
+    if (!currentTrack || currentTrack.id !== track.id) {
+      setCurrentTrack(track);
+      const trackIdx = tracks.indexOf(track);
+      setQueue([...tracks.slice(trackIdx + 1), ...tracks.slice(0, trackIdx)]);
+      play();
+      incrementPlayCount(track.id);
     } else {
-      try {
-        await audio.play();
-        setIsPlaying(true);
+      togglePlay();
+      if (!isPlaying) {
         incrementPlayCount(track.id);
-      } catch {
-        // Browser may block autoplay
       }
     }
-  }, [isPlaying, track, incrementPlayCount]);
+  }, [track, currentTrack, isPlaying, tracks, setCurrentTrack, setQueue, play, togglePlay, incrementPlayCount]);
 
-  // Switch track
+  // Switch track in the global store
   const switchTrack = useCallback(
     (index: number) => {
-      if (index === currentIndex && tracks.length > 0) return;
-      const audio = audioRef.current;
-      if (audio) {
-        audio.pause();
-        setIsPlaying(false);
+      if (!tracks[index]) return;
+      const selected = tracks[index];
+
+      // If clicking the already-active track, toggle play
+      if (currentTrack?.id === selected.id) {
+        togglePlay();
+        return;
       }
-      setCurrentTime(0);
-      setDuration(0);
-      setCurrentIndex(index);
+
+      setCurrentTrack(selected);
+      setQueue([...tracks.slice(index + 1), ...tracks.slice(0, index)]);
+      play();
+      incrementPlayCount(selected.id);
     },
-    [currentIndex, tracks.length]
+    [tracks, currentTrack, setCurrentTrack, setQueue, play, togglePlay, incrementPlayCount]
   );
 
   const handleNext = useCallback(() => {
     if (tracks.length === 0) return;
-    const nextIndex = (currentIndex + 1) % tracks.length;
-    switchTrack(nextIndex);
+    const nextIdx = currentIndex >= 0 ? (currentIndex + 1) % tracks.length : 0;
+    switchTrack(nextIdx);
   }, [currentIndex, tracks.length, switchTrack]);
 
   const handlePrev = useCallback(() => {
     if (tracks.length === 0) return;
-    const prevIndex = (currentIndex - 1 + tracks.length) % tracks.length;
-    switchTrack(prevIndex);
+    const prevIdx = currentIndex >= 0 ? (currentIndex - 1 + tracks.length) % tracks.length : 0;
+    switchTrack(prevIdx);
   }, [currentIndex, tracks.length, switchTrack]);
-
-  // Auto-play next on track end
-  const handleTrackEnd = useCallback(() => {
-    setIsPlaying(false);
-    if (tracks.length > 1) {
-      const nextIndex = (currentIndex + 1) % tracks.length;
-      setCurrentIndex(nextIndex);
-      setCurrentTime(0);
-      setDuration(0);
-      // Will auto-play via the effect below
-      setTimeout(() => {
-        const audio = audioRef.current;
-        if (audio) {
-          audio.play().then(() => {
-            setIsPlaying(true);
-            incrementPlayCount(tracks[nextIndex].id);
-          }).catch(() => {});
-        }
-      }, 100);
-    }
-  }, [currentIndex, tracks, incrementPlayCount]);
-
-  // Click on progress bar to seek
-  const handleProgressClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const audio = audioRef.current;
-      const bar = progressRef.current;
-      if (!audio || !bar || !duration) return;
-
-      const rect = bar.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
-      const ratio = Math.max(0, Math.min(1, clickX / rect.width));
-      audio.currentTime = ratio * duration;
-      setCurrentTime(audio.currentTime);
-    },
-    [duration]
-  );
 
   // Download handler
   const handleDownload = useCallback(async () => {
@@ -190,13 +198,15 @@ export default function FeaturedMusic() {
     }
 
     // Trigger download
-    const link = document.createElement('a');
-    link.href = track.audio_url;
-    link.download = `${track.artist} - ${track.title}.mp3`;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (track.audio_url) {
+      const link = document.createElement('a');
+      link.href = track.audio_url;
+      link.download = `${track.artist} - ${track.title}.mp3`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   }, [track]);
 
   // Render nothing if no tracks loaded
@@ -204,7 +214,12 @@ export default function FeaturedMusic() {
     return null;
   }
 
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  // Progress from global store (only if our track is playing)
+  const progressPercent = isOurTrack && duration > 0 ? (progress / duration) * 100 : 0;
+  const displayProgress = isOurTrack ? progress : 0;
+  const displayDuration = isOurTrack ? duration : (track?.duration ?? 0);
+  const displayIsPlaying = isOurTrack && isPlaying;
+  const activeIndex = isOurTrack && currentIndex >= 0 ? currentIndex : -1;
 
   return (
     <section id="music" className="relative py-24 overflow-hidden">
@@ -243,22 +258,6 @@ export default function FeaturedMusic() {
               {/* Glow Effect */}
               <div className="absolute -top-20 -right-20 w-40 h-40 bg-purple-500/30 rounded-full blur-[60px]" />
 
-              {/* Hidden Audio Element */}
-              {track && (
-                <audio
-                  ref={audioRef}
-                  src={track.audio_url}
-                  preload="metadata"
-                  onTimeUpdate={(e) =>
-                    setCurrentTime((e.target as HTMLAudioElement).currentTime)
-                  }
-                  onLoadedMetadata={(e) =>
-                    setDuration((e.target as HTMLAudioElement).duration)
-                  }
-                  onEnded={handleTrackEnd}
-                />
-              )}
-
               {/* Current Track Display */}
               <div className="relative flex items-center gap-4 mb-8">
                 <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-cyan-600 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -275,25 +274,17 @@ export default function FeaturedMusic() {
                 </div>
               </div>
 
-              {/* Progress Bar */}
+              {/* Progress Bar (read-only, no seeking) */}
               <div className="mb-6">
-                <div
-                  ref={progressRef}
-                  onClick={handleProgressClick}
-                  className="relative h-2 bg-white/[0.08] rounded-full cursor-pointer group"
-                >
+                <div className="relative h-2 bg-white/[0.08] rounded-full">
                   <div
                     className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full transition-[width] duration-100"
-                    style={{ width: `${progress}%` }}
-                  />
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                    style={{ left: `${progress}%`, marginLeft: '-7px' }}
+                    style={{ width: `${progressPercent}%` }}
                   />
                 </div>
                 <div className="flex justify-between mt-2 text-xs text-gray-500">
-                  <span>{formatDuration(currentTime)}</span>
-                  <span>{formatDuration(duration)}</span>
+                  <span>{formatDuration(displayProgress)}</span>
+                  <span>{formatDuration(displayDuration)}</span>
                 </div>
               </div>
 
@@ -307,11 +298,11 @@ export default function FeaturedMusic() {
                   <SkipBack className="w-5 h-5" />
                 </button>
                 <button
-                  onClick={togglePlay}
+                  onClick={handleTogglePlay}
                   className="p-4 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-full text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-shadow"
-                  aria-label={isPlaying ? 'Пауза' : 'Пусни'}
+                  aria-label={displayIsPlaying ? 'Пауза' : 'Пусни'}
                 >
-                  {isPlaying ? (
+                  {displayIsPlaying ? (
                     <Pause className="w-6 h-6" />
                   ) : (
                     <Play className="w-6 h-6 ml-0.5" />
@@ -371,14 +362,14 @@ export default function FeaturedMusic() {
                   key={t.id}
                   onClick={() => switchTrack(index)}
                   className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all ${
-                    currentIndex === index
+                    activeIndex === index
                       ? 'bg-gradient-to-r from-purple-600/20 to-cyan-600/20 border border-purple-500/20'
                       : 'bg-white/[0.03] border border-transparent hover:bg-white/[0.05]'
                   }`}
                 >
                   {/* Track number */}
                   <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
-                    {currentIndex === index && isPlaying ? (
+                    {activeIndex === index && displayIsPlaying ? (
                       <div className="flex items-center gap-0.5">
                         {[...Array(3)].map((_, i) => (
                           <div
