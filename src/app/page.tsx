@@ -1,9 +1,11 @@
 import { Navbar, Footer } from '@/components/layout';
 import { Hero, Features, FeaturedMusic, Pricing, CTA } from '@/components/landing';
+import { HomePageSchema } from '@/components/schema';
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gray-950">
+      <HomePageSchema />
       <Navbar />
       <main>
         <Hero />

@@ -40,7 +40,7 @@ export default function CTA() {
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href="/register">
+                <Link href="/sign-up">
                   <Button size="xl" rightIcon={<ArrowRight className="w-5 h-5" />}>
                     Създай Безплатен Акаунт
                   </Button>

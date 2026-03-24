@@ -157,7 +157,7 @@ export default function Pricing() {
                     ))}
                   </ul>
 
-                  <Link href="/register" className="block">
+                  <Link href="/sign-up" className="block">
                     <Button variant={plan.variant} className="w-full">
                       {plan.cta}
                     </Button>

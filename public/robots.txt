@@ -1,5 +1,5 @@
 # AI-Records Robots.txt
-# https://ai-records.com
+# https://www.ai-records.eu
 
 User-agent: *
 Allow: /
@@ -9,6 +9,8 @@ Disallow: /dashboard
 Disallow: /studio
 Disallow: /player
 Disallow: /settings
+Disallow: /sign-in
+Disallow: /sign-up
 
 # Sitemap
-Sitemap: https://ai-records.com/sitemap.xml
+Sitemap: https://www.ai-records.eu/sitemap.xml
