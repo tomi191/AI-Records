@@ -1,4 +1,5 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { openrouter, MODEL, isConfigured } from '@/lib/openrouter';
 import { buildSystemPrompt, buildUserPrompt, generateSunoStylePrompt, extractStructure } from '@/lib/lyricsGenerator';
 import { GenerationRequest, MusicStyle, Mood } from '@/lib/types';
@@ -25,6 +26,12 @@ function validateRequest(body: unknown): body is GenerationRequest {
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate user
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Check if API is configured
     if (!isConfigured()) {
       return new Response(

@@ -1,26 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { auth } from '@clerk/nextjs/server';
+import { supabaseAdmin } from '@/lib/auth';
 
 // GET - Fetch user credits
 export async function GET() {
   try {
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    // Authenticate user via Clerk
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized', message: 'Please log in' },
         { status: 401 }
       );
     }
 
-    const { data: profile, error } = await supabase
+    const { data: profile, error } = await supabaseAdmin
       .from('profiles')
       .select('credits, subscription_tier')
-      .eq('id', user.id)
+      .eq('id', userId)
       .single();
 
     if (error) {
@@ -40,16 +37,12 @@ export async function GET() {
   }
 }
 
-// POST - Deduct credits
+// POST - Deduct credits (with optimistic locking to prevent race conditions)
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    // Authenticate user via Clerk
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized', message: 'Please log in' },
         { status: 401 }
@@ -66,42 +59,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get current credits
-    const { data: profile, error: fetchError } = await supabase
+    // Atomic check: only select if user has enough credits
+    const { data, error } = await supabaseAdmin
       .from('profiles')
       .select('credits')
-      .eq('id', user.id)
+      .eq('id', userId)
+      .gte('credits', amount)
       .single();
 
-    if (fetchError) {
-      throw fetchError;
-    }
-
-    const currentCredits = profile?.credits || 0;
-
-    if (currentCredits < amount) {
+    if (error || !data) {
       return NextResponse.json(
-        {
-          error: 'Insufficient credits',
-          message: `You have ${currentCredits} credits but need ${amount}`,
-        },
+        { error: 'Insufficient credits' },
         { status: 400 }
       );
     }
 
-    // Deduct credits
-    const { error: updateError } = await supabase
+    // Optimistic locking: only deduct if credits haven't changed since the SELECT
+    const { data: updated, error: updateError } = await supabaseAdmin
       .from('profiles')
-      .update({ credits: currentCredits - amount })
-      .eq('id', user.id);
+      .update({ credits: data.credits - amount })
+      .eq('id', userId)
+      .eq('credits', data.credits)
+      .select('credits')
+      .single();
 
-    if (updateError) {
-      throw updateError;
+    if (updateError || !updated) {
+      return NextResponse.json(
+        { error: 'Credit deduction failed, please retry' },
+        { status: 409 }
+      );
     }
 
     return NextResponse.json({
       success: true,
-      credits: currentCredits - amount,
+      credits: updated.credits,
     });
   } catch (error) {
     console.error('Credits POST Error:', error);

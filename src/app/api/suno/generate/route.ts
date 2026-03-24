@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { generateMusic, isSunoConfigured } from '@/lib/suno';
 import { generateStylePrompt } from '@/knowledge/music-styles';
 import { MusicStyle, Mood } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate user
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Check if SUNO is configured
     if (!isSunoConfigured()) {
       return NextResponse.json(

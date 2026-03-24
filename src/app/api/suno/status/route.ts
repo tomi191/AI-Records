@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { checkStatus, isSunoConfigured } from '@/lib/suno';
 
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate user
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Check if SUNO is configured
     if (!isSunoConfigured()) {
       return NextResponse.json(
