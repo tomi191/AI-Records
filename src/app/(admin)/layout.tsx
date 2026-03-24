@@ -1,90 +1,56 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { currentUser } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { useUserStore } from '@/store/userStore';
 import {
   LayoutDashboard,
-  Users,
-  CreditCard,
-  BarChart3,
-  Settings,
-  LogOut,
+  Upload,
+  ArrowLeft,
   Music4,
-  ChevronLeft,
 } from 'lucide-react';
 
 const adminNavItems = [
   { icon: LayoutDashboard, label: 'Табло', href: '/admin' },
-  { icon: Users, label: 'Потребители', href: '/admin/users' },
-  { icon: CreditCard, label: 'Абонаменти', href: '/admin/subscriptions' },
-  { icon: BarChart3, label: 'Статистики', href: '/admin/stats' },
-  { icon: Settings, label: 'Настройки', href: '/admin/settings' },
+  { icon: Upload, label: 'Качи Музика', href: '/admin/upload' },
 ];
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-  const { user, isAuthenticated, _hasHydrated, logout } = useUserStore();
-  const [mounted, setMounted] = useState(false);
+  const user = await currentUser();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted || !_hasHydrated) return;
-
-    // Check if user is authenticated and is admin
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-
-    // Check for admin role (you would need to add is_admin field to Profile type)
-    // For now, we'll use a simple check - in production, check user.is_admin
-    // if (!user?.is_admin) {
-    //   router.push('/dashboard');
-    //   return;
-    // }
-  }, [isAuthenticated, _hasHydrated, mounted, router, user]);
-
-  // Show loading state while hydrating
-  if (!mounted || !_hasHydrated) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full" />
-      </div>
-    );
+  if (!user) {
+    redirect('/sign-in');
   }
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full" />
-      </div>
-    );
+  const role = (user.publicMetadata as Record<string, unknown>)?.role;
+  if (role !== 'admin') {
+    redirect('/dashboard');
   }
+
+  const userEmail = user.emailAddresses[0]?.emailAddress || '';
 
   return (
     <div className="min-h-screen bg-gray-950 flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-900/50 border-r border-white/[0.08] flex flex-col">
+      <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
         {/* Logo */}
-        <div className="p-6 border-b border-white/[0.08]">
+        <div className="p-6 border-b border-gray-800">
           <Link href="/admin" className="flex items-center gap-3">
             <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-purple-600 to-cyan-600 rounded-xl">
               <Music4 className="w-5 h-5 text-white" />
             </div>
             <div>
               <span className="text-lg font-bold text-white">AI-Records</span>
-              <span className="block text-xs text-purple-400">Admin Panel</span>
+              <span className="block text-xs text-purple-400">Admin</span>
             </div>
           </Link>
+        </div>
+
+        {/* User email */}
+        <div className="px-6 py-3 border-b border-gray-800">
+          <p className="text-xs text-gray-400 truncate">{userEmail}</p>
         </div>
 
         {/* Navigation */}
@@ -105,24 +71,14 @@ export default function AdminLayout({
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/[0.08] space-y-2">
+        <div className="p-4 border-t border-gray-800">
           <Link
-            href="/dashboard"
+            href="/"
             className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-white/[0.05] rounded-xl transition-colors"
           >
-            <ChevronLeft className="w-5 h-5" />
-            <span>Към Приложението</span>
+            <ArrowLeft className="w-5 h-5" />
+            <span>Към сайта</span>
           </Link>
-          <button
-            onClick={() => {
-              logout();
-              router.push('/');
-            }}
-            className="flex items-center gap-3 px-4 py-3 w-full text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            <span>Изход</span>
-          </button>
         </div>
       </aside>
 
