@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Music4, Github, Twitter } from 'lucide-react';
+import { Music4 } from 'lucide-react';
 
 const footerLinks = {
   product: [
@@ -38,24 +38,6 @@ export default function Footer() {
               Създавай професионални български текстове и музика.
               Платформа за музикално творчество от ново поколение.
             </p>
-            <div className="flex items-center gap-3">
-              <a
-                href="https://github.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 text-gray-400 hover:text-white hover:bg-white/[0.05] rounded-lg transition-colors"
-              >
-                <Github className="w-5 h-5" />
-              </a>
-              <a
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 text-gray-400 hover:text-white hover:bg-white/[0.05] rounded-lg transition-colors"
-              >
-                <Twitter className="w-5 h-5" />
-              </a>
-            </div>
           </div>
 
           {/* Product */}
