@@ -6,10 +6,12 @@ import {
   Upload,
   ArrowLeft,
   Music4,
+  ListMusic,
 } from 'lucide-react';
 
 const adminNavItems = [
   { icon: LayoutDashboard, label: 'Табло', href: '/admin' },
+  { icon: ListMusic, label: 'Песни', href: '/admin/tracks' },
   { icon: Upload, label: 'Качи Музика', href: '/admin/upload' },
 ];
 

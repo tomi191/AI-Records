@@ -47,6 +47,11 @@ function apiTrackToTrack(t: FeaturedTrackAPI): Track {
     download_count: t.download_count,
     duration: t.duration,
     file_size: null,
+    category: 'original',
+    tags: [],
+    publish_at: null,
+    description: null,
+    spotify_url: null,
     created_at: new Date().toISOString(),
   };
 }
