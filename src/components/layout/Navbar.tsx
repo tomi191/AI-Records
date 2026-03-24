@@ -3,22 +3,20 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useUser, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs';
 import {
   Music4,
   LayoutDashboard,
   Mic2,
   Headphones,
   CreditCard,
-  Settings,
-  LogOut,
   Menu,
   X,
   Sparkles,
-  User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/store/userStore';
-import { Button, Avatar, Badge } from '@/components/ui';
+import { Button, Badge } from '@/components/ui';
 
 const navLinks = [
   { href: '/dashboard', label: 'Табло', icon: LayoutDashboard },
@@ -29,14 +27,9 @@ const navLinks = [
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { user, isAuthenticated, logout } = useUserStore();
+  const { isSignedIn } = useUser();
+  const { user: storeUser } = useUserStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-
-  const handleLogout = async () => {
-    logout();
-    window.location.href = '/';
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/[0.08] bg-gray-950/80 backdrop-blur-xl">
@@ -82,81 +75,34 @@ export default function Navbar() {
 
           {/* Right Section */}
           <div className="flex items-center gap-3">
-            {isAuthenticated && user ? (
+            {isSignedIn ? (
               <>
                 {/* Credits Badge */}
                 <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border border-purple-500/20 rounded-full">
                   <Sparkles className="w-4 h-4 text-purple-400" />
-                  <span className="text-sm font-medium text-white">{user.credits}</span>
+                  <span className="text-sm font-medium text-white">{storeUser?.credits ?? 0}</span>
                   <span className="text-xs text-gray-400">кредита</span>
                 </div>
 
-                {/* Profile Dropdown */}
-                <div className="relative">
-                  <button
-                    onClick={() => setIsProfileOpen(!isProfileOpen)}
-                    className="flex items-center gap-2 p-1 rounded-full hover:bg-white/[0.05] transition-colors"
-                  >
-                    <Avatar name={user.name || user.email || 'User'} size="sm" />
-                  </button>
-
-                  {isProfileOpen && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setIsProfileOpen(false)}
-                      />
-                      <div className="absolute right-0 mt-2 w-56 py-2 bg-gray-900/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl z-50 animate-scaleUp">
-                        <div className="px-4 py-3 border-b border-white/[0.08]">
-                          <p className="text-sm font-medium text-white truncate">
-                            {user.name || 'User'}
-                          </p>
-                          <p className="text-xs text-gray-400 truncate">{user.email}</p>
-                        </div>
-
-                        <div className="py-2">
-                          <Link
-                            href="/dashboard"
-                            className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/[0.05] transition-colors"
-                            onClick={() => setIsProfileOpen(false)}
-                          >
-                            <LayoutDashboard className="w-4 h-4" />
-                            Табло
-                          </Link>
-                          <Link
-                            href="/settings"
-                            className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/[0.05] transition-colors"
-                            onClick={() => setIsProfileOpen(false)}
-                          >
-                            <Settings className="w-4 h-4" />
-                            Настройки
-                          </Link>
-                        </div>
-
-                        <div className="pt-2 border-t border-white/[0.08]">
-                          <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
-                          >
-                            <LogOut className="w-4 h-4" />
-                            Изход
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
+                {/* Clerk UserButton */}
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox: 'w-9 h-9',
+                    },
+                  }}
+                />
               </>
             ) : (
               <div className="flex items-center gap-2">
-                <Link href="/login">
+                <SignInButton mode="modal">
                   <Button variant="ghost" size="sm">
                     Вход
                   </Button>
-                </Link>
-                <Link href="/register">
+                </SignInButton>
+                <SignUpButton mode="modal">
                   <Button size="sm">Регистрация</Button>
-                </Link>
+                </SignUpButton>
               </div>
             )}
 
@@ -197,11 +143,11 @@ export default function Navbar() {
               );
             })}
 
-            {isAuthenticated && (
+            {isSignedIn && (
               <div className="pt-4 border-t border-white/[0.08]">
                 <div className="flex items-center justify-between px-4 py-3">
                   <span className="text-sm text-gray-400">Кредити</span>
-                  <Badge variant="purple">{user?.credits || 0}</Badge>
+                  <Badge variant="purple">{storeUser?.credits ?? 0}</Badge>
                 </div>
               </div>
             )}
