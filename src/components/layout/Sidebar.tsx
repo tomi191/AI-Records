@@ -12,6 +12,11 @@ import {
   ChevronRight,
   PenTool,
   Wand2,
+  RefreshCw,
+  Disc3,
+  Layers,
+  MicVocal,
+  Video,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/store/userStore';
@@ -23,8 +28,13 @@ const mainLinks = [
     label: 'Студио',
     icon: Mic2,
     children: [
-      { href: '/studio/lyrics', label: 'Генератор Текстове', icon: PenTool },
-      { href: '/studio/generate', label: 'Генератор Музика', icon: Wand2 },
+      { href: '/studio/lyrics', label: 'Текстове', icon: PenTool },
+      { href: '/studio/generate', label: 'Музика', icon: Wand2 },
+      { href: '/studio/extend', label: 'Удължи', icon: RefreshCw },
+      { href: '/studio/cover', label: 'Cover', icon: Disc3 },
+      { href: '/studio/mashup', label: 'Mashup', icon: Layers },
+      { href: '/studio/vocals', label: 'Вокали', icon: MicVocal },
+      { href: '/studio/video', label: 'Видео', icon: Video },
     ],
   },
   { href: '/player', label: 'Музикална Библиотека', icon: Headphones },
