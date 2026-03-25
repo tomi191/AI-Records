@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { generateMusic, isKieAiConfigured, SunoModel } from '@/lib/kieai';
 import { generateStylePrompt } from '@/knowledge/music-styles';
 import { MusicStyle, Mood } from '@/lib/types';
+import { getSupabaseAdmin } from '@/lib/auth';
 
 const VALID_MODELS: SunoModel[] = ['V3_5', 'V4', 'V4_5', 'V4_5PLUS', 'V5'];
 
@@ -59,6 +60,22 @@ export async function POST(request: NextRequest) {
       lyrics: lyrics.trim(),
       model: selectedModel,
     });
+
+    // Save generation to database
+    try {
+      const supabase = getSupabaseAdmin();
+      await supabase.from('generations').insert({
+        user_id: userId,
+        type: 'music',
+        style: stylePrompt || style,
+        mood,
+        status: 'pending',
+        credits_used: 3,
+        model_version: selectedModel,
+      });
+    } catch (dbError) {
+      console.error('Failed to save music generation:', dbError);
+    }
 
     return NextResponse.json({
       task_id: result.task_id,

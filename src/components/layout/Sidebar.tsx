@@ -38,6 +38,7 @@ const mainLinks = [
     ],
   },
   { href: '/player', label: 'Музикална Библиотека', icon: Headphones },
+  { href: '/my-music', label: 'Моята Музика', icon: Music },
 ];
 
 const bottomLinks = [{ href: '/settings', label: 'Настройки', icon: Settings }];

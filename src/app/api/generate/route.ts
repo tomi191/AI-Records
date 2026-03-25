@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { generateLyricsStream, isKieAiConfigured } from '@/lib/kieai';
 import { buildSystemPrompt, buildUserPrompt, generateSunoStylePrompt, extractStructure } from '@/lib/lyricsGenerator';
 import { GenerationRequest, MusicStyle, Mood } from '@/lib/types';
+import { getSupabaseAdmin } from '@/lib/auth';
 
 // Validate request body
 function validateRequest(body: unknown): body is GenerationRequest {
@@ -114,6 +115,23 @@ export async function POST(request: NextRequest) {
               })}\n\n`
             )
           );
+
+          // Save generation to database
+          try {
+            const supabase = getSupabaseAdmin();
+            await supabase.from('generations').insert({
+              user_id: userId,
+              type: 'lyrics',
+              topic,
+              style,
+              mood,
+              lyrics: fullLyrics,
+              status: 'completed',
+              credits_used: 1,
+            });
+          } catch (dbError) {
+            console.error('Failed to save lyrics generation:', dbError);
+          }
 
           controller.close();
         } catch (error) {

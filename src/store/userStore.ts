@@ -82,6 +82,9 @@ export const CREDIT_COSTS = {
   music: 3,
   cover: 5,
   mashup: 10,
+  vocals_separate: 4,
+  vocals_add: 5,
+  video: 2,
 } as const;
 
 // Subscription tier limits
