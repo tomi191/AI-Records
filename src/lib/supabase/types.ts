@@ -101,6 +101,11 @@ export interface Database {
           download_count: number;
           duration: number | null;
           file_size: number | null;
+          category: 'original' | 'cover' | 'remix' | 'ai_generated';
+          tags: string[];
+          publish_at: string | null;
+          description: string | null;
+          spotify_url: string | null;
           created_at: string;
         };
         Insert: {
@@ -120,6 +125,11 @@ export interface Database {
           download_count?: number;
           duration?: number | null;
           file_size?: number | null;
+          category?: 'original' | 'cover' | 'remix' | 'ai_generated';
+          tags?: string[];
+          publish_at?: string | null;
+          description?: string | null;
+          spotify_url?: string | null;
           created_at?: string;
         };
         Update: {
@@ -139,6 +149,11 @@ export interface Database {
           download_count?: number;
           duration?: number | null;
           file_size?: number | null;
+          category?: 'original' | 'cover' | 'remix' | 'ai_generated';
+          tags?: string[];
+          publish_at?: string | null;
+          description?: string | null;
+          spotify_url?: string | null;
           created_at?: string;
         };
         Relationships: [];
