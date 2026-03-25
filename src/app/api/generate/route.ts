@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { openrouter, MODEL, isConfigured } from '@/lib/openrouter';
+import { generateLyricsStream, isKieAiConfigured } from '@/lib/kieai';
 import { buildSystemPrompt, buildUserPrompt, generateSunoStylePrompt, extractStructure } from '@/lib/lyricsGenerator';
 import { GenerationRequest, MusicStyle, Mood } from '@/lib/types';
 
@@ -33,11 +33,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if API is configured
-    if (!isConfigured()) {
+    if (!isKieAiConfigured()) {
       return new Response(
         JSON.stringify({
           error: 'API key not configured',
-          message: 'Please set OPENROUTER_API_KEY in your environment variables',
+          message: 'Please set KIEAI_API_KEY in your environment variables',
         }),
         {
           status: 500,
@@ -84,32 +84,18 @@ export async function POST(request: NextRequest) {
             )
           );
 
-          // Create OpenRouter stream
-          const completion = await openrouter.chat.completions.create({
-            model: MODEL,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userPrompt },
-            ],
-            stream: true,
-            temperature: 0.8,
-            max_tokens: 4096,
-          });
-
-          let fullLyrics = '';
-
-          // Stream chunks
-          for await (const chunk of completion) {
-            const content = chunk.choices[0]?.delta?.content || '';
-            if (content) {
-              fullLyrics += content;
+          // Stream lyrics via Kie.ai Gemini 3.1 Pro
+          const fullLyrics = await generateLyricsStream(
+            systemPrompt,
+            userPrompt,
+            (chunk: string) => {
               controller.enqueue(
                 encoder.encode(
-                  `data: ${JSON.stringify({ type: 'chunk', content })}\n\n`
+                  `data: ${JSON.stringify({ type: 'chunk', content: chunk })}\n\n`
                 )
               );
             }
-          }
+          );
 
           // Send completion with structure
           const structure = extractStructure(fullLyrics);

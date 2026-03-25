@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { generateMusic, isSunoConfigured } from '@/lib/suno';
+import { generateMusic, isKieAiConfigured, SunoModel } from '@/lib/kieai';
 import { generateStylePrompt } from '@/knowledge/music-styles';
 import { MusicStyle, Mood } from '@/lib/types';
+
+const VALID_MODELS: SunoModel[] = ['V3_5', 'V4', 'V4_5', 'V4_5PLUS', 'V5'];
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,20 +14,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if SUNO is configured
-    if (!isSunoConfigured()) {
+    // Check if Kie.ai is configured
+    if (!isKieAiConfigured()) {
       return NextResponse.json(
         {
-          error: 'SUNO API not configured',
+          error: 'Music API not configured',
           message:
-            'SUNO_API_KEY environment variable is not set. Music generation is currently unavailable.',
+            'KIEAI_API_KEY environment variable is not set. Music generation is currently unavailable.',
         },
         { status: 503 }
       );
     }
 
     const body = await request.json();
-    const { style, mood, lyrics, customPrompt } = body;
+    const { style, mood, lyrics, customPrompt, model } = body;
 
     // Validate required fields
     if (!lyrics || typeof lyrics !== 'string' || lyrics.trim().length === 0) {
@@ -34,6 +36,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Validate model if provided
+    const selectedModel: SunoModel = model && VALID_MODELS.includes(model) ? model : 'V5';
 
     // Generate style prompt
     let stylePrompt = '';
@@ -48,11 +53,11 @@ export async function POST(request: NextRequest) {
         : customPrompt;
     }
 
-    // Call SUNO API
+    // Call Kie.ai SUNO API
     const result = await generateMusic({
-      prompt: stylePrompt,
+      style: stylePrompt,
       lyrics: lyrics.trim(),
-      model: 'chirp-v3.5',
+      model: selectedModel,
     });
 
     return NextResponse.json({

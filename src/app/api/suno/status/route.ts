@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { checkStatus, isSunoConfigured } from '@/lib/suno';
+import { checkTaskStatus, isKieAiConfigured } from '@/lib/kieai';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,12 +10,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if SUNO is configured
-    if (!isSunoConfigured()) {
+    // Check if Kie.ai is configured
+    if (!isKieAiConfigured()) {
       return NextResponse.json(
         {
-          error: 'SUNO API not configured',
-          message: 'SUNO_API_KEY environment variable is not set.',
+          error: 'Music API not configured',
+          message: 'KIEAI_API_KEY environment variable is not set.',
         },
         { status: 503 }
       );
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const status = await checkStatus(taskId);
+    const status = await checkTaskStatus(taskId);
 
     return NextResponse.json({
       task_id: status.task_id,
