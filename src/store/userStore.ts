@@ -80,6 +80,8 @@ export const useUserStore = create<UserState>()(
 export const CREDIT_COSTS = {
   lyrics: 1,
   music: 3,
+  cover: 5,
+  mashup: 10,
 } as const;
 
 // Subscription tier limits
