@@ -25,8 +25,6 @@ import {
   Pause,
   Copy,
 } from 'lucide-react';
-import type { SunoModel } from '@/lib/kieai';
-
 // ─── Types ──────────────────────────────────────────────────
 type GenerationStatus = 'idle' | 'submitting' | 'processing' | 'completed' | 'failed';
 type ActiveTool = 'generate' | 'extend' | 'cover' | 'mashup' | 'vocals' | 'video';
@@ -36,14 +34,6 @@ interface AudioResult {
   title?: string;
   duration?: number;
 }
-
-const MODEL_OPTIONS: { value: SunoModel; label: string }[] = [
-  { value: 'V3_5', label: 'V3.5' },
-  { value: 'V4', label: 'V4' },
-  { value: 'V4_5', label: 'V4.5' },
-  { value: 'V4_5PLUS', label: 'V4.5+' },
-  { value: 'V5', label: 'V5' },
-];
 
 const TOOL_CREDITS: Record<ActiveTool, number> = {
   generate: CREDIT_COSTS.music,
@@ -68,7 +58,6 @@ export default function CreatePage() {
   const [style, setStyle] = useState('');
   const [lyrics, setLyrics] = useState('');
   const [isInstrumental, setIsInstrumental] = useState(false);
-  const [model, setModel] = useState<SunoModel>('V5');
 
   // Extend state
   const [extendTaskId, setExtendTaskId] = useState('');
@@ -187,9 +176,9 @@ export default function CreatePage() {
         case 'generate':
           endpoint = '/api/suno/generate';
           if (isCustomMode) {
-            body = { title, style, lyrics, model, instrumental: isInstrumental };
+            body = { title, style, lyrics, model: 'V5', instrumental: isInstrumental };
           } else {
-            body = { prompt: simplePrompt, model, instrumental: isInstrumental };
+            body = { prompt: simplePrompt, model: 'V5', instrumental: isInstrumental };
           }
           break;
 
@@ -199,7 +188,7 @@ export default function CreatePage() {
             taskId: extendTaskId.trim(),
             lyrics: extendLyrics.trim() || undefined,
             style: extendStyle.trim() || undefined,
-            model,
+            model: 'V5',
           };
           break;
 
@@ -208,7 +197,7 @@ export default function CreatePage() {
           body = {
             audioUrl: coverAudioUrl.trim(),
             style: coverStyle.trim() || undefined,
-            model,
+            model: 'V5',
           };
           break;
 
@@ -216,7 +205,7 @@ export default function CreatePage() {
           endpoint = '/api/studio/mashup';
           body = {
             audioUrls: mashupUrls.filter((u) => u.trim()),
-            model,
+            model: 'V5',
           };
           break;
 
@@ -361,22 +350,6 @@ export default function CreatePage() {
                 Инструментал
               </button>
 
-              {/* Model selector */}
-              <div className="ml-auto flex items-center gap-2">
-                <span className="text-xs text-gray-500">Модел:</span>
-                <select
-                  value={model}
-                  onChange={(e) => setModel(e.target.value as SunoModel)}
-                  disabled={isGenerating}
-                  className="px-3 py-1.5 bg-gray-900 border border-gray-800 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all disabled:opacity-50"
-                >
-                  {MODEL_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
           )}
 
@@ -481,21 +454,6 @@ export default function CreatePage() {
                   disabled={isGenerating}
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Модел:</span>
-                <select
-                  value={model}
-                  onChange={(e) => setModel(e.target.value as SunoModel)}
-                  disabled={isGenerating}
-                  className="px-3 py-1.5 bg-gray-900 border border-gray-800 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all disabled:opacity-50"
-                >
-                  {MODEL_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
           )}
 
@@ -523,21 +481,6 @@ export default function CreatePage() {
                   placeholder="напр. Jazz, Acoustic, Lo-fi..."
                   disabled={isGenerating}
                 />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Модел:</span>
-                <select
-                  value={model}
-                  onChange={(e) => setModel(e.target.value as SunoModel)}
-                  disabled={isGenerating}
-                  className="px-3 py-1.5 bg-gray-900 border border-gray-800 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all disabled:opacity-50"
-                >
-                  {MODEL_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
           )}

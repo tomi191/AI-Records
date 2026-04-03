@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { generateMusic, isKieAiConfigured, SunoModel } from '@/lib/kieai';
+import { generateMusic, isKieAiConfigured } from '@/lib/kieai';
 import { generateStylePrompt } from '@/knowledge/music-styles';
 import { MusicStyle, Mood } from '@/lib/types';
 import { getSupabaseAdmin } from '@/lib/auth';
-
-const VALID_MODELS: SunoModel[] = ['V3_5', 'V4', 'V4_5', 'V4_5PLUS', 'V5'];
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { style, mood, lyrics, customPrompt, model } = body;
+    const { style, mood, lyrics, customPrompt } = body;
 
     // Validate required fields
     if (!lyrics || typeof lyrics !== 'string' || lyrics.trim().length === 0) {
@@ -37,9 +35,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    // Validate model if provided
-    const selectedModel: SunoModel = model && VALID_MODELS.includes(model) ? model : 'V5';
 
     // Generate style prompt
     let stylePrompt = '';
@@ -58,7 +53,7 @@ export async function POST(request: NextRequest) {
     const result = await generateMusic({
       style: stylePrompt,
       lyrics: lyrics.trim(),
-      model: selectedModel,
+      model: 'V5',
     });
 
     // Save generation to database
@@ -71,7 +66,7 @@ export async function POST(request: NextRequest) {
         mood,
         status: 'pending',
         credits_used: 3,
-        model_version: selectedModel,
+        model_version: 'V5',
       });
     } catch (dbError) {
       console.error('Failed to save music generation:', dbError);

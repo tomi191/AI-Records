@@ -25,7 +25,7 @@ export function isKieAiConfigured(): boolean {
 
 // ─── SUNO Music Generation ───────────────────────────────
 
-export type SunoModel = 'V3_5' | 'V4' | 'V4_5' | 'V4_5PLUS' | 'V5';
+export type SunoModel = 'V5';
 
 export interface GenerateMusicRequest {
   prompt?: string;          // Simple mode: text prompt (max 500-1000 chars)

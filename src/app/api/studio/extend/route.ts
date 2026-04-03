@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { extendMusic, isKieAiConfigured, type SunoModel } from '@/lib/kieai';
-
-const VALID_MODELS: SunoModel[] = ['V3_5', 'V4', 'V4_5', 'V4_5PLUS', 'V5'];
+import { extendMusic, isKieAiConfigured } from '@/lib/kieai';
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { taskId, lyrics, style, model } = body;
+    const { taskId, lyrics, style } = body;
 
     // Validate required fields
     if (!taskId || typeof taskId !== 'string' || taskId.trim().length === 0) {
@@ -35,15 +33,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate model if provided
-    const selectedModel: SunoModel = model && VALID_MODELS.includes(model) ? model : 'V5';
-
     // Call Kie.ai extend API
     const result = await extendMusic({
       taskId: taskId.trim(),
       lyrics: lyrics?.trim() || undefined,
       style: style?.trim() || undefined,
-      model: selectedModel,
+      model: 'V5',
     });
 
     return NextResponse.json({

@@ -12,19 +12,9 @@ import {
   RotateCcw,
   Coins,
 } from 'lucide-react';
-import type { SunoModel } from '@/lib/kieai';
-
 type GenerationStatus = 'idle' | 'submitting' | 'processing' | 'completed' | 'failed';
 
 const EXTEND_CREDIT_COST = 5;
-
-const MODEL_OPTIONS: { value: SunoModel; label: string }[] = [
-  { value: 'V3_5', label: 'SUNO V3.5' },
-  { value: 'V4', label: 'SUNO V4' },
-  { value: 'V4_5', label: 'SUNO V4.5' },
-  { value: 'V4_5PLUS', label: 'SUNO V4.5+' },
-  { value: 'V5', label: 'SUNO V5' },
-];
 
 export default function ExtendPage() {
   const { user, deductCredits } = useUserStore();
@@ -32,7 +22,6 @@ export default function ExtendPage() {
   const [taskId, setTaskId] = useState('');
   const [lyrics, setLyrics] = useState('');
   const [style, setStyle] = useState('');
-  const [model, setModel] = useState<SunoModel>('V5');
 
   const [status, setStatus] = useState<GenerationStatus>('idle');
   const [resultTaskId, setResultTaskId] = useState<string | null>(null);
@@ -59,7 +48,7 @@ export default function ExtendPage() {
           taskId: taskId.trim(),
           lyrics: lyrics.trim() || undefined,
           style: style.trim() || undefined,
-          model,
+          model: 'V5',
         }),
       });
 
@@ -124,7 +113,6 @@ export default function ExtendPage() {
     setTaskId('');
     setLyrics('');
     setStyle('');
-    setModel('V5');
   };
 
   const isGenerating = status === 'submitting' || status === 'processing';
@@ -211,27 +199,6 @@ export default function ExtendPage() {
                 placeholder="напр. 'По-бърз темп, електронни елементи'"
                 disabled={isGenerating}
               />
-            </div>
-          </Card>
-
-          {/* Model Selector */}
-          <Card variant="glass" padding="md">
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
-                AI Модел
-              </h3>
-              <select
-                value={model}
-                onChange={(e) => setModel(e.target.value as SunoModel)}
-                disabled={isGenerating}
-                className="w-full px-4 py-2.5 bg-gray-900 border border-gray-800 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all disabled:opacity-50"
-              >
-                {MODEL_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
             </div>
           </Card>
 

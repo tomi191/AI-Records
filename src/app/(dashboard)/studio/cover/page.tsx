@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useUserStore, CREDIT_COSTS } from '@/store/userStore';
-import { Card, Button, Input, Select } from '@/components/ui';
+import { Card, Button, Input } from '@/components/ui';
 import {
   Disc3,
   AlertCircle,
@@ -16,14 +16,6 @@ import {
 
 type GenerationStatus = 'idle' | 'generating' | 'processing' | 'completed' | 'failed';
 
-const MODEL_OPTIONS = [
-  { value: 'V3_5', label: 'Suno V3.5' },
-  { value: 'V4', label: 'Suno V4' },
-  { value: 'V4_5', label: 'Suno V4.5' },
-  { value: 'V4_5PLUS', label: 'Suno V4.5+' },
-  { value: 'V5', label: 'Suno V5' },
-];
-
 type AudioSource = 'url' | 'upload';
 
 export default function CoverPage() {
@@ -33,7 +25,6 @@ export default function CoverPage() {
   const [audioSource, setAudioSource] = useState<AudioSource>('url');
   const [audioUrl, setAudioUrl] = useState('');
   const [style, setStyle] = useState('');
-  const [model, setModel] = useState('V5');
   const [isUploading, setIsUploading] = useState(false);
 
   // Generation state
@@ -93,7 +84,7 @@ export default function CoverPage() {
         body: JSON.stringify({
           audioUrl: audioUrl.trim(),
           style: style.trim() || undefined,
-          model,
+          model: 'V5',
         }),
       });
 
@@ -275,12 +266,6 @@ export default function CoverPage() {
                 placeholder="напр. Jazz, Electronic, Reggaeton, Pop ballad..."
                 label="Желан стил/жанр"
                 disabled={isGenerating}
-              />
-              <Select
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                options={MODEL_OPTIONS}
-                label="Модел"
               />
             </div>
           </Card>

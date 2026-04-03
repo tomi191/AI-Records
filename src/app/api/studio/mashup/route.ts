@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { generateMusic, isKieAiConfigured, SunoModel } from '@/lib/kieai';
-
-const VALID_MODELS: SunoModel[] = ['V3_5', 'V4', 'V4_5', 'V4_5PLUS', 'V5'];
+import { generateMusic, isKieAiConfigured } from '@/lib/kieai';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { audioUrls, style, model } = body;
+    const { audioUrls, style } = body;
 
     // Validate required fields
     if (!Array.isArray(audioUrls) || audioUrls.length < 2) {
@@ -44,9 +42,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validate model if provided
-    const selectedModel: SunoModel = model && VALID_MODELS.includes(model) ? model : 'V5';
-
     // Build mashup prompt combining sources
     const sourceList = audioUrls.map((url: string, i: number) => `Source ${i + 1}: ${url.trim()}`).join('\n');
     const mashupPrompt = `Create a mashup combining the following audio sources:\n${sourceList}${style ? `\nStyle: ${style}` : ''}`;
@@ -54,7 +49,7 @@ export async function POST(request: NextRequest) {
     // Call Kie.ai Generate API with mashup prompt
     const result = await generateMusic({
       prompt: mashupPrompt,
-      model: selectedModel,
+      model: 'V5',
       style: style || undefined,
     });
 

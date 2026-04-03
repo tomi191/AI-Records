@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { coverMusic, isKieAiConfigured, SunoModel } from '@/lib/kieai';
-
-const VALID_MODELS: SunoModel[] = ['V3_5', 'V4', 'V4_5', 'V4_5PLUS', 'V5'];
+import { coverMusic, isKieAiConfigured } from '@/lib/kieai';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { audioUrl, style, model } = body;
+    const { audioUrl, style } = body;
 
     // Validate required fields
     if (!audioUrl || typeof audioUrl !== 'string' || audioUrl.trim().length === 0) {
@@ -34,14 +32,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate model if provided
-    const selectedModel: SunoModel = model && VALID_MODELS.includes(model) ? model : 'V5';
-
     // Call Kie.ai Cover API
     const result = await coverMusic({
       audioUrl: audioUrl.trim(),
       style: style || undefined,
-      model: selectedModel,
+      model: 'V5',
     });
 
     return NextResponse.json({

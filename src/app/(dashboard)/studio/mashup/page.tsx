@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useUserStore, CREDIT_COSTS } from '@/store/userStore';
-import { Card, Button, Input, Select } from '@/components/ui';
+import { Card, Button, Input } from '@/components/ui';
 import {
   Layers,
   AlertCircle,
@@ -17,21 +17,12 @@ import {
 
 type GenerationStatus = 'idle' | 'generating' | 'processing' | 'completed' | 'failed';
 
-const MODEL_OPTIONS = [
-  { value: 'V3_5', label: 'Suno V3.5' },
-  { value: 'V4', label: 'Suno V4' },
-  { value: 'V4_5', label: 'Suno V4.5' },
-  { value: 'V4_5PLUS', label: 'Suno V4.5+' },
-  { value: 'V5', label: 'Suno V5' },
-];
-
 export default function MashupPage() {
   const { user, deductCredits } = useUserStore();
 
   // Form state
   const [audioUrls, setAudioUrls] = useState<string[]>(['', '']);
   const [style, setStyle] = useState('');
-  const [model, setModel] = useState('V5');
 
   // Generation state
   const [status, setStatus] = useState<GenerationStatus>('idle');
@@ -79,7 +70,7 @@ export default function MashupPage() {
         body: JSON.stringify({
           audioUrls: validUrls,
           style: style.trim() || undefined,
-          model,
+          model: 'V5',
         }),
       });
 
@@ -219,12 +210,6 @@ export default function MashupPage() {
                 placeholder="напр. Smooth transition, EDM remix, Chill mashup..."
                 label="Как да се комбинират (по избор)"
                 disabled={isGenerating}
-              />
-              <Select
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                options={MODEL_OPTIONS}
-                label="Модел"
               />
             </div>
           </Card>
