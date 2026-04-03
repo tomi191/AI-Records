@@ -29,7 +29,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      query = query.or(`title.ilike.%${search}%,artist.ilike.%${search}%`);
+      const sanitizedSearch = search.replace(/[%_\\]/g, '');
+      if (sanitizedSearch) {
+        query = query.or(`title.ilike.%${sanitizedSearch}%,artist.ilike.%${sanitizedSearch}%`);
+      }
     }
 
     // Sort
