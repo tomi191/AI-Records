@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import MusicPlayer from '@/components/player/MusicPlayer';
@@ -8,6 +8,14 @@ const inter = Inter({
   subsets: ['latin', 'cyrillic'],
   variable: '--font-inter',
 });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  colorScheme: 'dark',
+};
 
 export const metadata: Metadata = {
   title: 'AI-Records | Създай Българска Музика',

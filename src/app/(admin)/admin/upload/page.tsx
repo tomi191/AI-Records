@@ -181,6 +181,7 @@ export default function AdminUploadPage() {
               <button
                 type="button"
                 onClick={removeFile}
+                aria-label="Премахни"
                 className="p-1.5 text-gray-400 hover:text-red-400 transition-colors"
               >
                 <X className="w-4 h-4" />

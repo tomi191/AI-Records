@@ -141,7 +141,8 @@ export default function MusicPlayer() {
           <div className="flex items-center gap-2">
             <button
               onClick={toggleShuffle}
-              className={`p-2 rounded-lg transition-colors ${
+              aria-label="Разбъркай"
+              className={`p-2.5 rounded-lg transition-colors ${
                 isShuffled
                   ? 'text-purple-400 bg-purple-500/10'
                   : 'text-gray-500 hover:text-white hover:bg-white/[0.05]'
@@ -151,25 +152,29 @@ export default function MusicPlayer() {
             </button>
             <button
               onClick={playPrevious}
-              className="p-2 text-gray-400 hover:text-white hover:bg-white/[0.05] rounded-lg transition-colors"
+              aria-label="Предишна песен"
+              className="p-2.5 text-gray-400 hover:text-white hover:bg-white/[0.05] rounded-lg transition-colors"
             >
               <SkipBack className="w-5 h-5" />
             </button>
             <button
               onClick={togglePlay}
+              aria-label={isPlaying ? 'Пауза' : 'Пусни'}
               className="p-3 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-full text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-shadow"
             >
               {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
             </button>
             <button
               onClick={playNext}
-              className="p-2 text-gray-400 hover:text-white hover:bg-white/[0.05] rounded-lg transition-colors"
+              aria-label="Следваща песен"
+              className="p-2.5 text-gray-400 hover:text-white hover:bg-white/[0.05] rounded-lg transition-colors"
             >
               <SkipForward className="w-5 h-5" />
             </button>
             <button
               onClick={toggleLoop}
-              className={`p-2 rounded-lg transition-colors ${
+              aria-label="Повтори"
+              className={`p-2.5 rounded-lg transition-colors ${
                 isLooping
                   ? 'text-purple-400 bg-purple-500/10'
                   : 'text-gray-500 hover:text-white hover:bg-white/[0.05]'
@@ -207,7 +212,8 @@ export default function MusicPlayer() {
         <div className="w-32 flex items-center gap-2">
           <button
             onClick={toggleMute}
-            className="p-2 text-gray-400 hover:text-white hover:bg-white/[0.05] rounded-lg transition-colors"
+            aria-label={isMuted || volume === 0 ? 'Без звук' : 'Звук'}
+            className="p-2.5 text-gray-400 hover:text-white hover:bg-white/[0.05] rounded-lg transition-colors"
           >
             {isMuted || volume === 0 ? (
               <VolumeX className="w-5 h-5" />

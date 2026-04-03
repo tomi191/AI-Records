@@ -157,12 +157,14 @@ export default function DemoPlayer() {
               <div className="flex items-center justify-center gap-4">
                 <button
                   onClick={handlePrev}
+                  aria-label="Предишна песен"
                   className="p-3 text-gray-400 hover:text-white hover:bg-white/[0.05] rounded-full transition-colors"
                 >
                   <SkipBack className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => setIsPlaying(!isPlaying)}
+                  aria-label={isPlaying ? 'Пауза' : 'Пусни'}
                   className="p-4 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-full text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-shadow"
                 >
                   {isPlaying ? (
@@ -173,6 +175,7 @@ export default function DemoPlayer() {
                 </button>
                 <button
                   onClick={handleNext}
+                  aria-label="Следваща песен"
                   className="p-3 text-gray-400 hover:text-white hover:bg-white/[0.05] rounded-full transition-colors"
                 >
                   <SkipForward className="w-5 h-5" />

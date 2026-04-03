@@ -316,6 +316,7 @@ export default function AdminTracksPage() {
                       <td className="px-4 py-4 text-center">
                         <button
                           onClick={() => handleToggleFeatured(track)}
+                          aria-label="Покажи на начална страница"
                           className="p-1.5 rounded-lg hover:bg-white/[0.05] transition-colors"
                           title={
                             track.is_featured
@@ -343,6 +344,7 @@ export default function AdminTracksPage() {
                         <div className="flex items-center justify-end gap-1">
                           <Link
                             href={`/admin/tracks/${track.id}/edit`}
+                            aria-label="Редактирай"
                             className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors"
                             title="Редактирай"
                           >
@@ -350,6 +352,7 @@ export default function AdminTracksPage() {
                           </Link>
                           <button
                             onClick={() => setDeleteId(track.id)}
+                            aria-label="Изтрий"
                             className="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                             title="Изтрий"
                           >
