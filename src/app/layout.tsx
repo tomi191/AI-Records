@@ -32,6 +32,9 @@ export const metadata: Metadata = {
     'фолк',
   ],
   authors: [{ name: 'AI-Records' }],
+  alternates: {
+    canonical: 'https://www.ai-records.eu',
+  },
   openGraph: {
     title: 'AI-Records | Създай Българска Музика',
     description:
@@ -39,12 +42,22 @@ export const metadata: Metadata = {
     type: 'website',
     siteName: 'AI-Records',
     locale: 'bg_BG',
+    url: 'https://www.ai-records.eu',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'AI-Records — Българска AI Музикална Платформа',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'AI-Records | Създай Българска Музика',
     description:
       'Генерирай професионални български текстове и ги превърни в истински песни.',
+    images: ['/og-image.png'],
   },
 };
 
