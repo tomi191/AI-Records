@@ -130,7 +130,10 @@ export async function generateMusic(request: GenerateMusicRequest): Promise<Task
   if (request.weirdnessConstraint !== undefined) body.weirdnessConstraint = request.weirdnessConstraint;
   if (request.audioWeight !== undefined) body.audioWeight = request.audioWeight;
   if (request.personaId) body.personaId = request.personaId;
-  if (request.callBackUrl) body.callBackUrl = request.callBackUrl;
+  // callBackUrl is REQUIRED by Kie.ai API
+  body.callBackUrl = request.callBackUrl || process.env.NEXT_PUBLIC_APP_URL
+    ? `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.ai-records.eu'}/api/webhooks/suno`
+    : 'https://www.ai-records.eu/api/webhooks/suno';
 
   const res = await fetch(`${BASE_URL}/api/v1/generate`, {
     method: 'POST',
@@ -210,7 +213,7 @@ export async function checkTaskStatus(taskId: string): Promise<{
   tracks: KieTrackData[];
   error?: string;
 }> {
-  const res = await fetch(`${BASE_URL}/api/v1/status?taskId=${taskId}`, {
+  const res = await fetch(`${BASE_URL}/api/v1/generate/record-info?taskId=${taskId}`, {
     method: 'GET',
     headers: headers(),
   });
@@ -222,16 +225,33 @@ export async function checkTaskStatus(taskId: string): Promise<{
 
   const json = await res.json();
 
-  // Map Kie.ai response to our format
-  const tracks: KieTrackData[] = json.data?.data || [];
-  let status: 'pending' | 'processing' | 'completed' | 'failed' = 'pending';
+  // Map Kie.ai record-info response to our format
+  const recordData = json.data;
+  let tracks: KieTrackData[] = [];
 
-  if (json.code === 200 && tracks.length > 0 && tracks[0].audio_url) {
+  // Parse response field (contains track data when complete)
+  if (recordData?.response) {
+    try {
+      const parsed = typeof recordData.response === 'string'
+        ? JSON.parse(recordData.response)
+        : recordData.response;
+      tracks = Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      // Response not parseable yet
+    }
+  }
+
+  let status: 'pending' | 'processing' | 'completed' | 'failed' = 'pending';
+  const recordStatus = recordData?.status?.toUpperCase();
+
+  if ((recordStatus === 'SUCCESS' || recordStatus === 'COMPLETE') && tracks.length > 0 && tracks[0]?.audio_url) {
     status = 'completed';
-  } else if (json.code === 501) {
+  } else if (recordStatus === 'FAILED' || recordStatus === 'ERROR' || json.code === 501) {
     status = 'failed';
-  } else if (json.code === 200) {
+  } else if (recordStatus === 'PROCESSING' || recordStatus === 'QUEUED') {
     status = 'processing';
+  } else {
+    status = 'pending';
   }
 
   return {
