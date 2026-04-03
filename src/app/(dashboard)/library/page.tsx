@@ -19,13 +19,15 @@ import {
   XCircle,
   RefreshCw,
   Heart,
+  Disc3,
+  History,
 } from 'lucide-react';
-import { Card, Input, Badge, Button, Modal } from '@/components/ui';
+import { Card, Input, Badge, Button, Modal, TrackCard } from '@/components/ui';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
 import { TrackList } from '@/components/player';
 import type { Track } from '@/lib/supabase/types';
 
-// ── Generation types (from my-music) ──
+// ── Generation types ──
 
 interface Generation {
   id: string;
@@ -41,13 +43,16 @@ interface Generation {
   created_at: string;
   model_version?: string;
   generation_type?: string;
+  title?: string;
+  cover_url?: string;
+  duration?: number;
 }
 
 const TYPE_CONFIG: Record<string, { label: string; color: string; icon: typeof Music }> = {
   lyrics: { label: 'Текст', color: 'purple', icon: PenTool },
   music: { label: 'Музика', color: 'cyan', icon: Music },
   extend: { label: 'Удължи', color: 'emerald', icon: RefreshCw },
-  cover: { label: 'Cover', color: 'orange', icon: Music },
+  cover: { label: 'Cover', color: 'orange', icon: Disc3 },
   vocals: { label: 'Вокали', color: 'pink', icon: Music },
   video: { label: 'Видео', color: 'blue', icon: Music },
 };
@@ -148,7 +153,25 @@ export default function LibraryPage() {
     return matchesSearch && (category === 'all' || matchesCategory);
   });
 
-  const styles = Array.from(new Set(tracks.map((t) => t.style).filter(Boolean)));
+  // ── Cover tracks: filter catalog by category ──
+  const coverTracks = tracks.filter(
+    (t) => t.category === 'cover' || t.category === 'remix'
+  );
+
+  // ── Cover generations ──
+  const coverGenerations = generations.filter(
+    (g) => g.type === 'cover' || g.generation_type === 'cover' || g.generation_type === 'remix'
+  );
+
+  // ── All generations sorted chronologically ──
+  const chronologicalGenerations = [...generations].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  // ── User's own completed generations as tracks ──
+  const myCompletedGenerations = generations.filter(
+    (g) => g.status === 'completed' && g.audio_url
+  );
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -161,6 +184,32 @@ export default function LibraryPage() {
     });
   };
 
+  // Map generation to Track for TrackCard
+  const genToTrack = (gen: Generation): Track => ({
+    id: gen.id,
+    user_id: gen.user_id,
+    uploaded_by: null,
+    title: gen.title || gen.topic || gen.style || gen.type || 'Песен',
+    artist: 'Sarys',
+    audio_url: gen.audio_url || null,
+    youtube_url: null,
+    cover_url: gen.cover_url || null,
+    lyrics: gen.lyrics || null,
+    style: gen.style || null,
+    is_public: false,
+    is_featured: false,
+    play_count: 0,
+    download_count: 0,
+    duration: gen.duration || null,
+    file_size: null,
+    category: gen.type === 'cover' ? 'cover' : 'ai_generated',
+    tags: gen.model_version ? [gen.model_version] : [],
+    publish_at: null,
+    description: null,
+    spotify_url: null,
+    created_at: gen.created_at,
+  });
+
   return (
     <div className="p-6 lg:p-8 pb-32">
       <div className="max-w-5xl mx-auto">
@@ -171,19 +220,21 @@ export default function LibraryPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">Библиотека</h1>
-            <p className="text-gray-400">Каталог, твоите песни и харесани</p>
+            <p className="text-gray-400">Каталог, твоите песни и история</p>
           </div>
         </div>
 
         {/* Tabs */}
         <Tabs defaultValue="catalog" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="catalog">Каталог</TabsTrigger>
-            <TabsTrigger value="my-songs">Моите Песни</TabsTrigger>
+          <TabsList className="flex-wrap">
+            <TabsTrigger value="catalog">Песни</TabsTrigger>
+            <TabsTrigger value="covers">Covers</TabsTrigger>
+            <TabsTrigger value="my-songs">Моите</TabsTrigger>
+            <TabsTrigger value="history">История</TabsTrigger>
             <TabsTrigger value="liked">Харесани</TabsTrigger>
           </TabsList>
 
-          {/* ══════════════ КАТАЛОГ ══════════════ */}
+          {/* ══════════════ ПЕСНИ (КАТАЛОГ) ══════════════ */}
           <TabsContent value="catalog">
             {/* Search & Category Filter */}
             <Card variant="glass" padding="md" className="mb-6">
@@ -227,8 +278,57 @@ export default function LibraryPage() {
                 <div className="flex items-center justify-center py-16">
                   <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full" />
                 </div>
+              ) : filteredTracks.length > 0 ? (
+                <div className="space-y-1">
+                  {filteredTracks.map((track) => (
+                    <TrackCard key={track.id} track={track} />
+                  ))}
+                </div>
               ) : (
                 <TrackList tracks={filteredTracks} />
+              )}
+            </Card>
+          </TabsContent>
+
+          {/* ══════════════ COVERS ══════════════ */}
+          <TabsContent value="covers">
+            <Card variant="glass" padding="md">
+              {tracksLoading || genLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
+                </div>
+              ) : coverTracks.length > 0 || coverGenerations.length > 0 ? (
+                <div className="space-y-1">
+                  {/* DB tracks that are covers/remixes */}
+                  {coverTracks.map((track) => (
+                    <TrackCard key={track.id} track={track} />
+                  ))}
+                  {/* User's cover generations */}
+                  {coverGenerations
+                    .filter((g) => g.status === 'completed' && g.audio_url)
+                    .map((gen) => (
+                      <TrackCard key={gen.id} track={genToTrack(gen)} />
+                    ))
+                  }
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <div className="p-4 bg-gray-800/50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <Disc3 className="w-8 h-8 text-gray-500" />
+                  </div>
+                  <h3 className="text-lg font-medium text-white mb-2">
+                    Няма covers все още
+                  </h3>
+                  <p className="text-gray-400 mb-6">
+                    Създай cover на любимата си песен!
+                  </p>
+                  <Link href="/create?tab=cover">
+                    <Button variant="primary" leftIcon={<Disc3 className="w-4 h-4" />}>
+                      Създай Cover
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
               )}
             </Card>
           </TabsContent>
@@ -248,7 +348,7 @@ export default function LibraryPage() {
               </div>
             )}
 
-            {!genLoading && !genError && generations.length === 0 && (
+            {!genLoading && !genError && myCompletedGenerations.length === 0 && (
               <Card variant="glass" padding="lg">
                 <div className="text-center py-12">
                   <div className="p-4 bg-gray-800/50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
@@ -273,81 +373,112 @@ export default function LibraryPage() {
               </Card>
             )}
 
-            {!genLoading && generations.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {generations.map((gen) => {
+            {!genLoading && myCompletedGenerations.length > 0 && (
+              <Card variant="glass" padding="md">
+                <div className="space-y-1">
+                  {myCompletedGenerations.map((gen) => (
+                    <TrackCard key={gen.id} track={genToTrack(gen)} />
+                  ))}
+                </div>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* ══════════════ ИСТОРИЯ ══════════════ */}
+          <TabsContent value="history">
+            {genLoading && (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
+              </div>
+            )}
+
+            {genError && !genLoading && (
+              <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 mb-6">
+                <XCircle className="w-5 h-5 flex-shrink-0" />
+                <span>{genError}</span>
+              </div>
+            )}
+
+            {!genLoading && !genError && chronologicalGenerations.length === 0 && (
+              <Card variant="glass" padding="lg">
+                <div className="text-center py-12">
+                  <div className="p-4 bg-gray-800/50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <History className="w-8 h-8 text-gray-500" />
+                  </div>
+                  <h3 className="text-lg font-medium text-white mb-2">
+                    Празна история
+                  </h3>
+                  <p className="text-gray-400">
+                    Тук ще се показват всичките ти генерации хронологично.
+                  </p>
+                </div>
+              </Card>
+            )}
+
+            {!genLoading && chronologicalGenerations.length > 0 && (
+              <div className="space-y-3">
+                {chronologicalGenerations.map((gen) => {
                   const typeConfig = TYPE_CONFIG[gen.type] || TYPE_CONFIG.music;
                   const statusConfig = STATUS_CONFIG[gen.status] || STATUS_CONFIG.pending;
 
                   return (
-                    <Card key={gen.id} variant="glass" padding="md" className="flex flex-col">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex gap-2">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${getTypeColor(typeConfig.color)}`}>
-                            {typeConfig.label}
-                          </span>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${getStatusColor(statusConfig.color)}`}>
-                            {statusConfig.label}
-                          </span>
+                    <Card key={gen.id} variant="glass" padding="md">
+                      <div className="flex items-start gap-4">
+                        {/* Type icon + status */}
+                        <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                          <div className={`p-2 rounded-lg ${getTypeColor(typeConfig.color).split(' ')[0]}`}>
+                            <typeConfig.icon className={`w-4 h-4 ${getTypeColor(typeConfig.color).split(' ')[1]}`} />
+                          </div>
                         </div>
-                      </div>
 
-                      <h3 className="text-sm font-medium text-white mb-1 line-clamp-2">
-                        {gen.topic || gen.style || gen.type}
-                      </h3>
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${getTypeColor(typeConfig.color)}`}>
+                              {typeConfig.label}
+                            </span>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${getStatusColor(statusConfig.color)}`}>
+                              {statusConfig.label}
+                            </span>
+                            {gen.credits_used > 0 && (
+                              <span className="text-[10px] text-gray-600">
+                                {gen.credits_used} кр.
+                              </span>
+                            )}
+                          </div>
 
-                      {gen.style && (
-                        <p className="text-xs text-gray-500 mb-1">
-                          Стил: {gen.style}
-                        </p>
-                      )}
-                      {gen.mood && (
-                        <p className="text-xs text-gray-500 mb-2">
-                          Настроение: {gen.mood}
-                        </p>
-                      )}
+                          <h3 className="text-sm font-medium text-white truncate">
+                            {gen.title || gen.topic || gen.style || gen.type}
+                          </h3>
 
-                      <p className="text-xs text-gray-600 mt-auto pt-2 border-t border-white/[0.05]">
-                        {formatDate(gen.created_at)} &middot; {gen.credits_used} кр.
-                      </p>
+                          {gen.style && (
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {gen.style}
+                            </p>
+                          )}
 
-                      <div className="flex gap-2 mt-3">
-                        {gen.type === 'lyrics' && gen.status === 'completed' && gen.lyrics && (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setLyricsModal(gen)}
-                            leftIcon={<Eye className="w-3.5 h-3.5" />}
-                            className="flex-1"
-                          >
-                            Виж Текст
-                          </Button>
-                        )}
-                        {gen.type !== 'lyrics' && gen.status === 'completed' && gen.audio_url && (
-                          <>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => {
-                                const audio = new Audio(gen.audio_url!);
-                                audio.play();
-                              }}
-                              leftIcon={<Play className="w-3.5 h-3.5" />}
-                              className="flex-1"
+                          <p className="text-[11px] text-gray-600 mt-1">
+                            {formatDate(gen.created_at)}
+                          </p>
+
+                          {/* Audio player if completed */}
+                          {gen.status === 'completed' && gen.audio_url && (
+                            <div className="mt-2">
+                              <TrackCard track={genToTrack(gen)} compact />
+                            </div>
+                          )}
+
+                          {/* Lyrics view */}
+                          {gen.type === 'lyrics' && gen.status === 'completed' && gen.lyrics && (
+                            <button
+                              onClick={() => setLyricsModal(gen)}
+                              className="mt-2 flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 transition-colors"
                             >
-                              Пусни
-                            </Button>
-                            <a href={gen.audio_url} download>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                leftIcon={<Download className="w-3.5 h-3.5" />}
-                              >
-                                Изтегли
-                              </Button>
-                            </a>
-                          </>
-                        )}
+                              <Eye className="w-3 h-3" />
+                              Виж текст
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </Card>
                   );

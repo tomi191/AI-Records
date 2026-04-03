@@ -8,3 +8,4 @@ export { default as Avatar, type AvatarProps } from './Avatar';
 export { default as Select, type SelectProps, type SelectOption } from './Select';
 export { default as Slider, type SliderProps } from './Slider';
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs';
+export { default as TrackCard, type TrackCardProps } from './TrackCard';
