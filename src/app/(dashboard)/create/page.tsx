@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useUserStore, CREDIT_COSTS } from '@/store/userStore';
 import { usePlayerStore } from '@/store/playerStore';
@@ -74,7 +74,7 @@ const TOOL_CONFIG = [
 ];
 
 // ─── Component ──────────────────────────────────────────────
-export default function CreatePage() {
+function CreatePageContent() {
   const { user, deductCredits } = useUserStore();
   const searchParams = useSearchParams();
 
@@ -1030,5 +1030,13 @@ export default function CreatePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CreatePage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="w-8 h-8 animate-spin text-purple-500" /></div>}>
+      <CreatePageContent />
+    </Suspense>
   );
 }
