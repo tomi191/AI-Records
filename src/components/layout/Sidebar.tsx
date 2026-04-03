@@ -3,42 +3,19 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
-  Mic2,
-  Music,
-  Headphones,
-  Settings,
+  Home,
   Sparkles,
+  Library,
+  Settings,
   ChevronRight,
-  PenTool,
-  Wand2,
-  RefreshCw,
-  Disc3,
-  Layers,
-  MicVocal,
-  Video,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/store/userStore';
 
 const mainLinks = [
-  { href: '/dashboard', label: 'Табло', icon: LayoutDashboard },
-  {
-    href: '/studio',
-    label: 'Студио',
-    icon: Mic2,
-    children: [
-      { href: '/studio/lyrics', label: 'Текстове', icon: PenTool },
-      { href: '/studio/generate', label: 'Музика', icon: Wand2 },
-      { href: '/studio/extend', label: 'Удължи', icon: RefreshCw },
-      { href: '/studio/cover', label: 'Cover', icon: Disc3 },
-      { href: '/studio/mashup', label: 'Mashup', icon: Layers },
-      { href: '/studio/vocals', label: 'Вокали', icon: MicVocal },
-      { href: '/studio/video', label: 'Видео', icon: Video },
-    ],
-  },
-  { href: '/player', label: 'Музикална Библиотека', icon: Headphones },
-  { href: '/my-music', label: 'Моята Музика', icon: Music },
+  { href: '/home', label: 'Начало', icon: Home },
+  { href: '/create', label: 'Създай', icon: Sparkles },
+  { href: '/library', label: 'Библиотека', icon: Library },
 ];
 
 const bottomLinks = [{ href: '/settings', label: 'Настройки', icon: Settings }];
@@ -46,13 +23,6 @@ const bottomLinks = [{ href: '/settings', label: 'Настройки', icon: Set
 export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useUserStore();
-
-  const isLinkActive = (href: string) => {
-    if (href === '/studio') {
-      return pathname === '/studio' || pathname?.startsWith('/studio/');
-    }
-    return pathname === href;
-  };
 
   return (
     <aside className="hidden lg:flex flex-col w-64 h-[calc(100vh-64px)] sticky top-16 border-r border-white/[0.08] bg-gray-950/50">
@@ -85,58 +55,23 @@ export default function Sidebar() {
             Основни
           </p>
           {mainLinks.map((link) => {
-            const isActive = isLinkActive(link.href);
+            const isActive = pathname === link.href || pathname?.startsWith(`${link.href}/`);
             const Icon = link.icon;
 
             return (
-              <div key={link.href}>
-                <Link
-                  href={link.href}
-                  className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
-                    isActive
-                      ? 'bg-gradient-to-r from-purple-600/20 to-cyan-600/20 text-white border border-purple-500/20'
-                      : 'text-gray-400 hover:text-white hover:bg-white/[0.05]'
-                  )}
-                >
-                  <Icon className="w-5 h-5" />
-                  {link.label}
-                  {link.children && (
-                    <ChevronRight
-                      className={cn(
-                        'w-4 h-4 ml-auto transition-transform',
-                        isActive && 'rotate-90'
-                      )}
-                    />
-                  )}
-                </Link>
-
-                {/* Sub Links */}
-                {link.children && isActive && (
-                  <div className="ml-4 mt-1 pl-4 border-l border-white/[0.08] space-y-1">
-                    {link.children.map((child) => {
-                      const isChildActive = pathname === child.href;
-                      const ChildIcon = child.icon;
-
-                      return (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          className={cn(
-                            'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all',
-                            isChildActive
-                              ? 'text-purple-400 bg-purple-500/10'
-                              : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
-                          )}
-                        >
-                          <ChildIcon className="w-4 h-4" />
-                          {child.label}
-                        </Link>
-                      );
-                    })}
-                  </div>
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
+                  isActive
+                    ? 'bg-gradient-to-r from-purple-600/20 to-cyan-600/20 text-white border border-purple-500/20'
+                    : 'text-gray-400 hover:text-white hover:bg-white/[0.05]'
                 )}
-              </div>
+              >
+                <Icon className="w-5 h-5" />
+                {link.label}
+              </Link>
             );
           })}
         </nav>

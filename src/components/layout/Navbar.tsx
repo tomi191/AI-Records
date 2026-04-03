@@ -6,23 +6,27 @@ import { usePathname } from 'next/navigation';
 import { useUser, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs';
 import {
   Music4,
-  LayoutDashboard,
-  Mic2,
-  Headphones,
+  Home,
+  Sparkles,
+  Library,
   CreditCard,
+  Info,
   Menu,
   X,
-  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/store/userStore';
 import { Button, Badge } from '@/components/ui';
 
-const navLinks = [
-  { href: '/dashboard', label: 'Табло', icon: LayoutDashboard },
-  { href: '/studio', label: 'Студио', icon: Mic2 },
-  { href: '/player', label: 'Плейър', icon: Headphones },
+const signedInLinks = [
+  { href: '/home', label: 'Начало', icon: Home },
+  { href: '/create', label: 'Създай', icon: Sparkles },
+  { href: '/library', label: 'Библиотека', icon: Library },
+];
+
+const publicLinks = [
   { href: '/pricing', label: 'Цени', icon: CreditCard },
+  { href: '/about', label: 'За нас', icon: Info },
 ];
 
 export default function Navbar() {
@@ -30,6 +34,8 @@ export default function Navbar() {
   const { isSignedIn } = useUser();
   const { user: storeUser } = useUserStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const navLinks = isSignedIn ? signedInLinks : publicLinks;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/[0.08] bg-gray-950/80 backdrop-blur-xl">
