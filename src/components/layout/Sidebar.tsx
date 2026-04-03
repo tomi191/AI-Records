@@ -4,8 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home,
+  Compass,
   Sparkles,
   Library,
+  Search,
   Settings,
   ChevronRight,
 } from 'lucide-react';
@@ -14,8 +16,10 @@ import { useUserStore } from '@/store/userStore';
 
 const mainLinks = [
   { href: '/home', label: 'Начало', icon: Home },
+  { href: '/explore', label: 'Explore', icon: Compass },
   { href: '/create', label: 'Създай', icon: Sparkles },
   { href: '/library', label: 'Библиотека', icon: Library },
+  { href: '/library?search=true', label: 'Търсене', icon: Search },
 ];
 
 const bottomLinks = [{ href: '/settings', label: 'Настройки', icon: Settings }];
@@ -55,7 +59,10 @@ export default function Sidebar() {
             Основни
           </p>
           {mainLinks.map((link) => {
-            const isActive = pathname === link.href || pathname?.startsWith(`${link.href}/`);
+            const isActive =
+              link.href === '/library?search=true'
+                ? false
+                : pathname === link.href || pathname?.startsWith(`${link.href}/`);
             const Icon = link.icon;
 
             return (
