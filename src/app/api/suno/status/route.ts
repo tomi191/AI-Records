@@ -33,12 +33,16 @@ export async function GET(request: NextRequest) {
 
     const status = await checkTaskStatus(taskId);
 
+    const firstTrack = status.tracks?.[0];
+
     return NextResponse.json({
-      task_id: status.task_id,
+      task_id: taskId,
       status: status.status,
-      audio_url: status.audio_url,
-      duration: status.duration,
-      title: status.title,
+      audio_url: firstTrack?.audio_url,
+      image_url: firstTrack?.image_url,
+      duration: firstTrack?.duration,
+      title: firstTrack?.title,
+      tracks: status.tracks,
       error: status.error,
     });
   } catch (error) {

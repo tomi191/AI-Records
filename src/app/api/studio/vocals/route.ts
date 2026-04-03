@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      task_id: result.task_id,
+      task_id: result.taskId,
       status: result.status,
       message: action === 'separate' ? 'Vocal separation started' : 'Generation started',
     });

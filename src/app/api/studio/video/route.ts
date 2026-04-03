@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const result = await createMusicVideo(taskId.trim());
 
     return NextResponse.json({
-      task_id: result.task_id,
+      task_id: result.taskId,
       status: result.status,
       message: 'Video generation started',
     });

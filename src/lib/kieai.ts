@@ -1,7 +1,7 @@
 /**
  * Kie.ai Unified AI Client
- * Single provider for SUNO Music Generation + Gemini 3.1 Pro Lyrics
- * Docs: https://docs.kie.ai
+ * SUNO V5/V5.5 Music Generation + Gemini 3.1 Pro Lyrics
+ * Docs: https://docs.kie.ai/suno-api/generate-music
  */
 
 const BASE_URL = process.env.KIEAI_BASE_URL || 'https://api.kie.ai';
@@ -23,72 +23,114 @@ export function isKieAiConfigured(): boolean {
   return !!process.env.KIEAI_API_KEY;
 }
 
-// ─── SUNO Music Generation ───────────────────────────────
+// ─── SUNO Music Generation (V5 / V5.5) ──────────────────
 
-export type SunoModel = 'V5';
+export type SunoModel = 'V5' | 'V5_5';
 
 export interface GenerateMusicRequest {
-  prompt?: string;          // Simple mode: text prompt (max 500-1000 chars)
-  title?: string;           // Custom mode: song title
-  style?: string;           // Custom mode: style description
-  lyrics?: string;          // Custom mode: lyrics (max 5000 chars)
-  model?: SunoModel;        // Default: V5
-  instrumental?: boolean;   // Instrumental only
-  vocalGender?: 'male' | 'female';
-  callbackUrl?: string;     // Webhook on completion
+  // Simple mode: just prompt (max 500 chars, AI generates lyrics)
+  // Custom mode: prompt = exact lyrics (max 5000 chars for V5/V5.5)
+  prompt?: string;
+  customMode?: boolean;       // true = custom, false = simple (default)
+  instrumental?: boolean;     // true = no vocals
+  model?: SunoModel;          // V5 or V5_5
+  // Custom mode fields:
+  title?: string;             // Song title (max 80 chars)
+  style?: string;             // Genre/mood (max 1000 chars for V5+)
+  // Advanced controls:
+  negativeTags?: string;      // Exclude genres (e.g. "Heavy Metal, Drums")
+  vocalGender?: 'm' | 'f';   // Male or female voice
+  styleWeight?: number;       // 0-1, adherence to style
+  weirdnessConstraint?: number; // 0-1, experimental deviation
+  audioWeight?: number;       // 0-1, audio feature balance
+  personaId?: string;         // Custom voice profile
+  callBackUrl?: string;       // Webhook URL (3 stages: text, first, complete)
 }
 
 export interface ExtendMusicRequest {
-  taskId: string;           // Original task to extend
-  lyrics?: string;          // Lyrics for extension
-  style?: string;           // Style for extension
+  taskId: string;
+  lyrics?: string;
+  style?: string;
   model?: SunoModel;
-  callbackUrl?: string;
+  callBackUrl?: string;
 }
 
 export interface CoverMusicRequest {
-  audioUrl: string;         // Source audio URL
-  style?: string;           // New style
+  audioUrl: string;
+  style?: string;
   model?: SunoModel;
-  callbackUrl?: string;
+  callBackUrl?: string;
 }
 
+// API Response format (from docs)
+export interface KieApiResponse {
+  code: number;
+  msg: string;
+  data: {
+    taskId: string;
+  };
+}
+
+// Track data in callback/status response
+export interface KieTrackData {
+  id: string;
+  audio_url: string;
+  stream_audio_url?: string;
+  image_url?: string;
+  prompt?: string;
+  model_name?: string;
+  title?: string;
+  tags?: string;
+  createTime?: string;
+  duration?: number;
+}
+
+// Status/callback response
+export interface TaskResult {
+  code: number;
+  msg: string;
+  data: {
+    callbackType?: 'text' | 'first' | 'complete';
+    task_id: string;
+    data: KieTrackData[];
+  };
+}
+
+// Simplified response for our API routes
 export interface TaskResponse {
-  task_id: string;
+  taskId: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   message?: string;
 }
 
-export interface TaskResult {
-  task_id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  audio_url?: string;
-  audio_urls?: string[];    // Multiple variations
-  duration?: number;
-  title?: string;
-  lyrics?: string;
-  error?: string;
-}
+// ─── Generate Music ──────────────────────────────────────
 
-// Generate music (returns task_id for polling)
 export async function generateMusic(request: GenerateMusicRequest): Promise<TaskResponse> {
+  const isCustom = request.customMode ?? !!request.title;
+
   const body: Record<string, unknown> = {
     model: request.model || 'V5',
     instrumental: request.instrumental || false,
+    customMode: isCustom,
   };
 
-  if (request.prompt) {
-    // Simple mode
-    body.prompt = request.prompt;
+  if (isCustom) {
+    // Custom mode: prompt = exact lyrics, style + title required
+    body.title = request.title || 'Untitled';
+    body.style = request.style || 'Pop';
+    if (request.prompt) body.prompt = request.prompt; // lyrics
   } else {
-    // Custom mode
-    body.title = request.title;
-    body.style = request.style;
-    body.lyrics = request.lyrics;
+    // Simple mode: prompt = description (max 500 chars)
+    body.prompt = request.prompt;
   }
 
+  if (request.negativeTags) body.negativeTags = request.negativeTags;
   if (request.vocalGender) body.vocalGender = request.vocalGender;
-  if (request.callbackUrl) body.callbackUrl = request.callbackUrl;
+  if (request.styleWeight !== undefined) body.styleWeight = request.styleWeight;
+  if (request.weirdnessConstraint !== undefined) body.weirdnessConstraint = request.weirdnessConstraint;
+  if (request.audioWeight !== undefined) body.audioWeight = request.audioWeight;
+  if (request.personaId) body.personaId = request.personaId;
+  if (request.callBackUrl) body.callBackUrl = request.callBackUrl;
 
   const res = await fetch(`${BASE_URL}/api/v1/generate`, {
     method: 'POST',
@@ -101,20 +143,31 @@ export async function generateMusic(request: GenerateMusicRequest): Promise<Task
     throw new Error(`Kie.ai generate failed: ${res.status} ${error}`);
   }
 
-  return res.json();
+  const json: KieApiResponse = await res.json();
+
+  if (json.code !== 200) {
+    throw new Error(`Kie.ai: ${json.msg} (code ${json.code})`);
+  }
+
+  return {
+    taskId: json.data.taskId,
+    status: 'pending',
+    message: json.msg,
+  };
 }
 
-// Extend an existing song
+// ─── Extend Music ────────────────────────────────────────
+
 export async function extendMusic(request: ExtendMusicRequest): Promise<TaskResponse> {
   const res = await fetch(`${BASE_URL}/api/v1/extend`, {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify({
       taskId: request.taskId,
-      lyrics: request.lyrics,
+      prompt: request.lyrics,
       style: request.style,
       model: request.model || 'V5',
-      callbackUrl: request.callbackUrl,
+      callBackUrl: request.callBackUrl,
     }),
   });
 
@@ -123,10 +176,12 @@ export async function extendMusic(request: ExtendMusicRequest): Promise<TaskResp
     throw new Error(`Kie.ai extend failed: ${res.status} ${error}`);
   }
 
-  return res.json();
+  const json: KieApiResponse = await res.json();
+  return { taskId: json.data.taskId, status: 'pending', message: json.msg };
 }
 
-// Create a cover (change style of existing audio)
+// ─── Cover Audio ─────────────────────────────────────────
+
 export async function coverMusic(request: CoverMusicRequest): Promise<TaskResponse> {
   const res = await fetch(`${BASE_URL}/api/v1/cover`, {
     method: 'POST',
@@ -135,7 +190,7 @@ export async function coverMusic(request: CoverMusicRequest): Promise<TaskRespon
       audioUrl: request.audioUrl,
       style: request.style,
       model: request.model || 'V5',
-      callbackUrl: request.callbackUrl,
+      callBackUrl: request.callBackUrl,
     }),
   });
 
@@ -144,11 +199,17 @@ export async function coverMusic(request: CoverMusicRequest): Promise<TaskRespon
     throw new Error(`Kie.ai cover failed: ${res.status} ${error}`);
   }
 
-  return res.json();
+  const json: KieApiResponse = await res.json();
+  return { taskId: json.data.taskId, status: 'pending', message: json.msg };
 }
 
-// Check task status (poll for completion)
-export async function checkTaskStatus(taskId: string): Promise<TaskResult> {
+// ─── Check Task Status ───────────────────────────────────
+
+export async function checkTaskStatus(taskId: string): Promise<{
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  tracks: KieTrackData[];
+  error?: string;
+}> {
   const res = await fetch(`${BASE_URL}/api/v1/status?taskId=${taskId}`, {
     method: 'GET',
     headers: headers(),
@@ -159,7 +220,25 @@ export async function checkTaskStatus(taskId: string): Promise<TaskResult> {
     throw new Error(`Kie.ai status check failed: ${res.status} ${error}`);
   }
 
-  return res.json();
+  const json = await res.json();
+
+  // Map Kie.ai response to our format
+  const tracks: KieTrackData[] = json.data?.data || [];
+  let status: 'pending' | 'processing' | 'completed' | 'failed' = 'pending';
+
+  if (json.code === 200 && tracks.length > 0 && tracks[0].audio_url) {
+    status = 'completed';
+  } else if (json.code === 501) {
+    status = 'failed';
+  } else if (json.code === 200) {
+    status = 'processing';
+  }
+
+  return {
+    status,
+    tracks,
+    error: json.code !== 200 ? json.msg : undefined,
+  };
 }
 
 // Poll until completion (max 5 minutes)
@@ -167,11 +246,11 @@ export async function waitForCompletion(
   taskId: string,
   maxAttempts = 60,
   intervalMs = 5000
-): Promise<TaskResult> {
+): Promise<KieTrackData[]> {
   for (let i = 0; i < maxAttempts; i++) {
     const result = await checkTaskStatus(taskId);
 
-    if (result.status === 'completed') return result;
+    if (result.status === 'completed') return result.tracks;
     if (result.status === 'failed') throw new Error(result.error || 'Generation failed');
 
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
@@ -180,7 +259,8 @@ export async function waitForCompletion(
   throw new Error('Generation timed out after 5 minutes');
 }
 
-// Separate vocals from audio
+// ─── Separate Vocals ─────────────────────────────────────
+
 export async function separateVocals(audioUrl: string): Promise<TaskResponse> {
   const res = await fetch(`${BASE_URL}/api/v1/separate`, {
     method: 'POST',
@@ -189,10 +269,12 @@ export async function separateVocals(audioUrl: string): Promise<TaskResponse> {
   });
 
   if (!res.ok) throw new Error(`Kie.ai separate failed: ${res.status}`);
-  return res.json();
+  const json: KieApiResponse = await res.json();
+  return { taskId: json.data.taskId, status: 'pending' };
 }
 
-// Create music video
+// ─── Create Music Video ──────────────────────────────────
+
 export async function createMusicVideo(taskId: string): Promise<TaskResponse> {
   const res = await fetch(`${BASE_URL}/api/v1/video`, {
     method: 'POST',
@@ -201,7 +283,8 @@ export async function createMusicVideo(taskId: string): Promise<TaskResponse> {
   });
 
   if (!res.ok) throw new Error(`Kie.ai video failed: ${res.status}`);
-  return res.json();
+  const json: KieApiResponse = await res.json();
+  return { taskId: json.data.taskId, status: 'pending' };
 }
 
 // ─── Gemini 3.1 Pro (Lyrics Generation) ──────────────────
@@ -209,14 +292,6 @@ export async function createMusicVideo(taskId: string): Promise<TaskResponse> {
 export interface GeminiMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
-}
-
-export interface GeminiCompletionRequest {
-  messages: GeminiMessage[];
-  model?: string;
-  temperature?: number;
-  max_tokens?: number;
-  stream?: boolean;
 }
 
 // Generate lyrics with Gemini 3.1 Pro (streaming)

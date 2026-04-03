@@ -51,8 +51,10 @@ export async function POST(request: NextRequest) {
 
     // Call Kie.ai SUNO API
     const result = await generateMusic({
+      customMode: true,
       style: stylePrompt,
-      lyrics: lyrics.trim(),
+      prompt: lyrics.trim(),
+      title: 'AI-Records Generation',
       model: 'V5',
     });
 
@@ -73,7 +75,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      task_id: result.task_id,
+      task_id: result.taskId,
       status: result.status,
       message: 'Generation started',
     });
